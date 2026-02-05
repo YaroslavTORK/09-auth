@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import css from "./NotesPage.module.css";
 import { useDebounce } from "use-debounce";
-import { fetchNotes } from "@/lib/api";
+import { fetchNotes } from "@/lib/api/clientApi";
 import { useQuery } from "@tanstack/react-query";
 import SearchBox from "@/components/SearchBox/SearchBox";
 import Pagination from "@/components/Pagination/Pagination";

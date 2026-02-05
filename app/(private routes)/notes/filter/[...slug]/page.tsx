@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { NoteTags } from "@/types/note";
 import NotesClient from "./Notes.client";
-import { fetchNotes } from "@/lib/api";
+import { fetchNotes } from "@/lib/api/clientApi";
 import {
   QueryClient,
   HydrationBoundary,
