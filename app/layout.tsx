@@ -50,8 +50,7 @@ export default function RootLayout({
           <AuthProvider>
             <Header />
             {children}
-            <div id="modal-root" />
-            {modal}
+            <div id="modal-root">{modal}</div>
             <Footer />
           </AuthProvider>
         </TanStackProvider>

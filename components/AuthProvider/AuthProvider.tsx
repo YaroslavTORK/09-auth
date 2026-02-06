@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef} from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { checkSession, logout } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -27,8 +27,10 @@ export default function AuthProvider({ children }: Props) {
   const { setUser, clearIsAuthenticated } = useAuthStore();
 
   const [isChecking, setIsChecking] = useState(true);
+  const runIdRef = useRef(0);
 
   useEffect(() => {
+    const runId = ++runIdRef.current;
     let alive = true;
 
     (async () => {
@@ -36,7 +38,7 @@ export default function AuthProvider({ children }: Props) {
 
       const user = await checkSession();
 
-      if (!alive) return;
+      if (!alive || runId !== runIdRef.current) return
 
       if (user) {
         setUser(user);

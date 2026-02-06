@@ -1,54 +1,71 @@
 import { cookies } from "next/headers";
 import type { Note, NoteTags } from "@/types/note";
 import type { User } from "@/types/user";
+import { api } from "./api";
+import type { AxiosResponse } from "axios";
 
-const baseURL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
-
-async function serverFetch<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const cookieStore = cookies();
-
-  const res = await fetch(`${baseURL}${path}`, {
-    ...options,
-    headers: {
-      ...options.headers,
-      Cookie: cookieStore.toString(),
-    },
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
-    throw new Error(`Server API error: ${res.status}`);
-  }
-
-  return res.json();
-}
-
-export async function fetchNotes(params: {
+export interface FetchNotesParams {
   page: number;
   perPage: number;
   search?: string;
   tag?: NoteTags;
-}) {
-  const query = new URLSearchParams(
-    Object.entries(params).filter(([, v]) => v !== undefined) as [
-      string,
-      string,
-    ][],
-  ).toString();
+}
 
-  return serverFetch<{
-    notes: Note[];
-    totalPages: number;
-  }>(`/notes?${query}`);
+export interface FetchNotesResponse {
+  notes: Note[];
+  totalPages: number;
+}
+
+type CookieItem = { name: string; value: string };
+
+async function buildCookieHeader(): Promise<string> {
+  const cookieStore = await cookies();
+
+  return cookieStore
+    .getAll()
+    .map(({ name, value }: CookieItem) => `${name}=${value}`)
+    .join("; ");
+}
+
+type AuthSessionResponse = { user: User } | null;
+
+export async function checkSession(): Promise<AxiosResponse<AuthSessionResponse>> {
+  const cookieHeader = await buildCookieHeader();
+
+  return api.get<AuthSessionResponse>("/auth/session", {
+    headers: { Cookie: cookieHeader },
+  });
+}
+
+export async function fetchNotes(
+  params: FetchNotesParams
+): Promise<FetchNotesResponse> {
+  const cookieHeader = await buildCookieHeader();
+
+  const res = await api.get<FetchNotesResponse>("/notes", {
+    params,
+    headers: { Cookie: cookieHeader },
+  });
+
+  return res.data;
 }
 
 export async function fetchNoteById(id: string): Promise<Note> {
-  return serverFetch<Note>(`/notes/${id}`);
+  const cookieHeader = await buildCookieHeader();
+
+  const res = await api.get<Note>(`/notes/${id}`, {
+    headers: { Cookie: cookieHeader },
+  });
+
+  return res.data;
 }
 
 export async function getMe(): Promise<User> {
-  return serverFetch<User>("/users/me");
+  const cookieHeader = await buildCookieHeader();
+
+  const res = await api.get<User>("/users/me", {
+    headers: { Cookie: cookieHeader },
+  });
+
+  return res.data;
 }
