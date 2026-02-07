@@ -20,18 +20,14 @@ export async function GET() {
       return NextResponse.json({ success: false }, { status: 200 });
     }
 
-    const cookieHeader = cookieStore
-      .getAll()
-      .map(({ name, value }) => `${name}=${value}`)
-      .join("; ");
-
     const apiRes = await api.get("auth/session", {
       headers: {
-        Cookie: cookieHeader,
+        Cookie: cookieStore.toString(),
       },
     });
 
     const setCookie = apiRes.headers["set-cookie"];
+
     if (setCookie) {
       const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
 
@@ -44,20 +40,19 @@ export async function GET() {
           maxAge: Number(parsed["Max-Age"]),
         };
 
-        if (parsed.accessToken)
-          cookieStore.set("accessToken", parsed.accessToken, options);
-        if (parsed.refreshToken)
-          cookieStore.set("refreshToken", parsed.refreshToken, options);
+        if (parsed.accessToken) cookieStore.set("accessToken", parsed.accessToken, options);
+        if (parsed.refreshToken) cookieStore.set("refreshToken", parsed.refreshToken, options);
       }
+
+      return NextResponse.json({ success: true }, { status: 200 });
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: false }, { status: 200 });
   } catch (error) {
     if (isAxiosError(error)) {
       logErrorResponse(error.response?.data);
       return NextResponse.json({ success: false }, { status: 200 });
     }
-
     logErrorResponse({ message: (error as Error).message });
     return NextResponse.json({ success: false }, { status: 200 });
   }
