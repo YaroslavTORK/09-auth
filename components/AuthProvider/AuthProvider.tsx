@@ -5,29 +5,24 @@ import { usePathname, useRouter } from "next/navigation";
 import { checkSession } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 
-type Props = {
-  children: React.ReactNode;
-};
+type Props = { children: React.ReactNode };
 
 const PRIVATE_PREFIXES = ["/notes", "/profile"];
-
-function isPrivatePath(pathname: string) {
-  return PRIVATE_PREFIXES.some((p) => pathname.startsWith(p));
-}
+const isPrivatePath = (p: string) => PRIVATE_PREFIXES.some((x) => p.startsWith(x));
 
 export default function AuthProvider({ children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { setUser, clearIsAuthenticated } = useAuthStore();
-  const [isChecking, setIsChecking] = useState(() => isPrivatePath(pathname));
+  const { setUser, clearIsAuthenticated, isAuthenticated } = useAuthStore();
+
+  const [isChecking, setIsChecking] = useState(false);
   const runIdRef = useRef(0);
 
   useEffect(() => {
-    if (!isPrivatePath(pathname)) {
-      setIsChecking(false);
-      return;
-    }
+    if (!isPrivatePath(pathname)) return;
+
+    if (isAuthenticated) return;
 
     const runId = ++runIdRef.current;
     let alive = true;
@@ -53,15 +48,29 @@ export default function AuthProvider({ children }: Props) {
     return () => {
       alive = false;
     };
-  }, [pathname, router, setUser, clearIsAuthenticated]);
+  }, [pathname, router, setUser, clearIsAuthenticated, isAuthenticated]);
 
-  if (isChecking && isPrivatePath(pathname)) {
-    return (
-      <div style={{ padding: "2rem 1rem", textAlign: "center" }}>
-        Loading...
-      </div>
-    );
-  }
+  return (
+    <>
+      {children}
 
-  return <>{children}</>;
+      {isChecking && isPrivatePath(pathname) && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            background: "rgba(255,255,255,0.6)",
+            backdropFilter: "blur(2px)",
+            zIndex: 9999,
+          }}
+        >
+          <div style={{ padding: "10px 14px", borderRadius: 10, background: "white" }}>
+            Loading...
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
