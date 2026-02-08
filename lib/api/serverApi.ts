@@ -20,11 +20,7 @@ type CookieItem = { name: string; value: string };
 
 async function buildCookieHeader(): Promise<string> {
   const cookieStore = await cookies();
-
-  return cookieStore
-    .getAll()
-    .map(({ name, value }: CookieItem) => `${name}=${value}`)
-    .join("; ");
+  return cookieStore.toString();
 }
 
 type AuthSessionResponse = { user: User } | null;

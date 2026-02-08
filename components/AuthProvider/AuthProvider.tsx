@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef} from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { checkSession, logout } from "@/lib/api/clientApi";
+import { checkSession } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 
 type Props = {
@@ -10,14 +10,9 @@ type Props = {
 };
 
 const PRIVATE_PREFIXES = ["/notes", "/profile"];
-const AUTH_PREFIXES = ["/sign-in", "/sign-up"];
 
 function isPrivatePath(pathname: string) {
   return PRIVATE_PREFIXES.some((p) => pathname.startsWith(p));
-}
-
-function isAuthPath(pathname: string) {
-  return AUTH_PREFIXES.some((p) => pathname.startsWith(p));
 }
 
 export default function AuthProvider({ children }: Props) {
@@ -25,40 +20,34 @@ export default function AuthProvider({ children }: Props) {
   const pathname = usePathname();
 
   const { setUser, clearIsAuthenticated } = useAuthStore();
-
-  const [isChecking, setIsChecking] = useState(true);
+  const [isChecking, setIsChecking] = useState(() => isPrivatePath(pathname));
   const runIdRef = useRef(0);
 
   useEffect(() => {
+    if (!isPrivatePath(pathname)) {
+      setIsChecking(false);
+      return;
+    }
+
     const runId = ++runIdRef.current;
     let alive = true;
 
-    (async () => {
-      setIsChecking(true);
+    setIsChecking(true);
 
+    (async () => {
       const user = await checkSession();
 
-      if (!alive || runId !== runIdRef.current) return
+      if (!alive || runId !== runIdRef.current) return;
 
       if (user) {
         setUser(user);
-
-        if (isAuthPath(pathname)) {
-          router.replace("/profile");
-        }
-      } else {
-        if (isPrivatePath(pathname)) {
-          try {
-            await logout();
-          } catch {}
-          clearIsAuthenticated();
-          router.replace("/sign-in");
-        } else {
-          clearIsAuthenticated();
-        }
+        setIsChecking(false);
+        return;
       }
 
+      clearIsAuthenticated();
       setIsChecking(false);
+      router.replace("/sign-in");
     })();
 
     return () => {

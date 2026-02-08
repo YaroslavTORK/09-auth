@@ -63,13 +63,13 @@ type AuthResponse = {
   user: User;
 };
 
-export async function register(data: AuthCredentials): Promise<User> {
-  const res = await api.post<AuthResponse>("/auth/register", data);
+export async function login(data: AuthCredentials): Promise<User> {
+  const res = await api.post<AuthResponse>("/auth/login", data);
   return res.data.user;
 }
 
-export async function login(data: AuthCredentials): Promise<User> {
-  const res = await api.post<AuthResponse>("/auth/login", data);
+export async function register(data: AuthCredentials): Promise<User> {
+  const res = await api.post<AuthResponse>("/auth/register", data);
   return res.data.user;
 }
 
@@ -81,8 +81,10 @@ type AuthSessionResponse = { user: User } | null;
 
 export async function checkSession(): Promise<User | null> {
   try {
-    const res = await api.get<User>("/users/me");
-    return res.data;
+    const session = await api.get<{ success: boolean }>("/auth/session");
+    if (!session.data.success) return null;
+    const me = await api.get<User>("/users/me");
+    return me.data;
   } catch {
     return null;
   }
