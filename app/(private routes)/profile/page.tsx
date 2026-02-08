@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import css from "./ProfilePage.module.css";
 import { getMe } from "@/lib/api/serverApi";
 
@@ -28,7 +29,13 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const user = await getMe();
+  let user;
+
+  try {
+    user = await getMe();
+  } catch {
+    redirect("/sign-in"); 
+  }
 
   return (
     <main className={css.mainContent}>
@@ -43,7 +50,7 @@ export default async function ProfilePage() {
 
         <div className={css.avatarWrapper}>
           <Image
-            src={user.avatar}
+            src={user.avatar || "/avatar-placeholder.png"} // ✅ якщо раптом пусто
             alt="User Avatar"
             width={120}
             height={120}
